@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 import os
+import concurrent.futures
 
 
 class Node(object):
@@ -14,20 +15,31 @@ class Node(object):
         return self.left, self.right
 
 
+# чтение файла
+def file_reading(file: str, d: dict):
+    with open(file) as f:
+        for line in f:
+            line = line.rstrip()
+            for s in line:
+                if s in d:
+                    d[s] += 1
+                else:
+                    d[s] = 1
+
+
 # подсчет частот символов, возхвращает словарь: {'a': 1, 'b': 2,...}
 def count_symbols_and_frequency(path: str):
     file_list = os.listdir(path)
     symbol_freq = {}
-    i = 1
-    for file in file_list:
-        with open(path + file) as f:
-            for line in f:
-                for s in line:
-                    if s in symbol_freq:
-                        symbol_freq[s] += 1
-                    else:
-                        symbol_freq[s] = 1
-        i += 1
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        futures = []
+        for file in file_list:
+            futures.append(
+                executor.submit(
+                    file_reading, file=path + file, d=symbol_freq)
+            )
+        for future in concurrent.futures.as_completed(futures):
+            future.result()
     return symbol_freq
 
 
@@ -36,22 +48,25 @@ def make_huffman_code(node: Node, binary_code=""):
     if type(node) is str:
         return {node: binary_code}
     (left, right) = node.get_leaves()
-    d = {}
+    code = {}
     if left is not None:
-        d.update(make_huffman_code(left, binary_code + "0"))
+        code.update(make_huffman_code(left, binary_code + "0"))
     if right is not None:
-        d.update(make_huffman_code(right, binary_code + "1"))
-    return d
+        code.update(make_huffman_code(right, binary_code + "1"))
+    return code
 
 
 if __name__ == "__main__":
     path = "input/"
+
     symbols_and_freq = count_symbols_and_frequency(path)
     print("symbols_and_freq = ", symbols_and_freq)
+
     symbols_and_freq = sorted(symbols_and_freq.items(), key=lambda f: f[1], reverse=True)
     nodes_arr = symbols_and_freq
     print("nodes_arr = ", nodes_arr)
 
+    # построение дерева
     while len(nodes_arr) > 1:
         (key1, c1) = nodes_arr[-1]
         (key2, c2) = nodes_arr[-2]
@@ -72,5 +87,4 @@ if __name__ == "__main__":
         print(first, " =    ", second)
 
 # TODO: unittest
-# TODO: параллельное чтение нескольких файлов
 # TODO: вывод кода в CSV
