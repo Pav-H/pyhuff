@@ -4,6 +4,7 @@ import os
 import concurrent.futures
 
 
+# класс - узел дерева
 class Node(object):
     left = None
     right = None
@@ -28,7 +29,7 @@ def file_reading(file: str, d: dict):
                     d[s] = 1
 
 
-# подсчет частот символов, возхвращает словарь: {'a': 1, 'b': 2,...}
+# подсчет частот символов, возвращает словарь: {'a': 1, 'b': 2,...}
 def count_symbols_and_frequency(path: str):
     file_list = os.listdir(path)
     symbol_freq = {}
@@ -42,6 +43,18 @@ def count_symbols_and_frequency(path: str):
         for future in concurrent.futures.as_completed(futures):
             future.result()
     return symbol_freq
+
+
+# построение дерева, возвращает корень дерева
+def make_tree(arr: []):
+    while len(arr) > 1:
+        (key1, c1) = arr[-1]
+        (key2, c2) = arr[-2]
+        arr = arr[:-2]
+        node = Node(key1, key2)
+        arr.append((node, c1 + c2))
+        arr = sorted(arr, key=lambda x: x[1], reverse=True)
+    return arr[0][0]
 
 
 # кодирование
@@ -60,41 +73,29 @@ def make_huffman_code(node: Node, binary_code=""):
 # запись кода в CSV файл
 def make_csv(file: str, d):
     with open(file, 'w') as f:
+        # с отключением автоцитирования, что бы не возникали лишние ковычки
         w = csv.writer(f, delimiter='|', quoting=csv.QUOTE_NONE, quotechar='')
         w.writerows(d.items())
 
 
 if __name__ == "__main__":
-    path = "input/"
-
+    path = "input/"  # путь к файлам для чтения
     symbols_and_freq = count_symbols_and_frequency(path)
-    print("symbols_and_freq = ", symbols_and_freq)
-
+    # сортировка по ключам
     symbols_and_freq = sorted(symbols_and_freq.items(), key=lambda f: f[1], reverse=True)
     nodes_arr = symbols_and_freq
-    print("nodes_arr = ", nodes_arr)
 
-    # построение дерева
-    while len(nodes_arr) > 1:
-        (key1, c1) = nodes_arr[-1]
-        (key2, c2) = nodes_arr[-2]
-        nodes_arr = nodes_arr[:-2]
-        node = Node(key1, key2)
-        nodes_arr.append((node, c1 + c2))
-        nodes_arr = sorted(nodes_arr, key=lambda x: x[1], reverse=True)
+    nodes_arr = make_tree(nodes_arr)
 
-    if nodes_arr[0][0].get_leaves is None:
-        code = {nodes_arr[0][0]: "0"}  # если строка из одного символа
+    if nodes_arr.get_leaves is None:
+        code = {nodes_arr: "0"}  # если во входных данных всего один сивол, то его код = 0
     else:
-        code = make_huffman_code(nodes_arr[0][0])
-    print("code = ", code)
-    print("Char     Code")
+        code = make_huffman_code(nodes_arr)
 
+    # вывод кода
+    print("Char     Code")
     for (symbol, frequency) in symbols_and_freq:
         first, second = (symbol, code[symbol])
         print(first, " =    ", second)
 
     make_csv("output.csv", code)
-
-# TODO: unittest
-# TODO: вывод кода в CSV
