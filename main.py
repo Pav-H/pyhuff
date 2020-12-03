@@ -62,12 +62,12 @@ def make_huffman_code(node: Node, binary_code=""):
     if type(node) is str:
         return {node: binary_code}
     (left, right) = node.get_leaves()
-    code = {}
+    code_dict = {}
     if left is not None:
-        code.update(make_huffman_code(left, binary_code + "0"))
+        code_dict.update(make_huffman_code(left, binary_code + "0"))
     if right is not None:
-        code.update(make_huffman_code(right, binary_code + "1"))
-    return code
+        code_dict.update(make_huffman_code(right, binary_code + "1"))
+    return code_dict
 
 
 # запись кода в CSV файл
@@ -83,14 +83,14 @@ if __name__ == "__main__":
     symbols_and_freq = count_symbols_and_frequency(path)
     # сортировка по ключам
     symbols_and_freq = sorted(symbols_and_freq.items(), key=lambda f: f[1], reverse=True)
-    nodes_arr = symbols_and_freq
 
-    nodes_arr = make_tree(nodes_arr)
+    root = symbols_and_freq
+    root = make_tree(root)
 
-    if nodes_arr.get_leaves is None:
-        code = {nodes_arr: "0"}  # если во входных данных всего один сивол, то его код = 0
+    if type(root) == str:
+        code = {root: "0"}  # если во входных данных всего один сивол, то его код = 0
     else:
-        code = make_huffman_code(nodes_arr)
+        code = make_huffman_code(root)
 
     # вывод кода
     print("Char     Code")
