@@ -1,4 +1,5 @@
 # -*- coding: utf8 -*-
+import csv
 import os
 import concurrent.futures
 
@@ -56,6 +57,13 @@ def make_huffman_code(node: Node, binary_code=""):
     return code
 
 
+# запись кода в CSV файл
+def make_csv(file: str, d):
+    with open(file, 'w') as f:
+        w = csv.writer(f, delimiter='|', quoting=csv.QUOTE_NONE, quotechar='')
+        w.writerows(d.items())
+
+
 if __name__ == "__main__":
     path = "input/"
 
@@ -85,6 +93,8 @@ if __name__ == "__main__":
     for (symbol, frequency) in symbols_and_freq:
         first, second = (symbol, code[symbol])
         print(first, " =    ", second)
+
+    make_csv("output.csv", code)
 
 # TODO: unittest
 # TODO: вывод кода в CSV
